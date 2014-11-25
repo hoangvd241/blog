@@ -8,6 +8,7 @@
 		"mocha" : "2.x",
 		"should" : "4.x",
 		"errorhandler" : "1.x",
-		"morgan" : "1.x"
+		"morgan" : "1.x",
+		"supertest" : "0.x"
 	}
 }
