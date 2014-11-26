@@ -1,4 +1,4 @@
-var
+/*var
 	request = require('supertest'),
 	app = require('../blog_db'),
 	should = require('should'),
@@ -12,3 +12,4 @@ describe('blog api test', function() {
 			.expect(200)
 	});
 });
+*/

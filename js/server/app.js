@@ -13,6 +13,8 @@ app.use( errorHandler({
 	showStack : true
 }));
 
+blog_db.synopsis_length = 20;
+
 app.get('/entries/:year/:month/:date/:limit', function (request, response) {
 	var
 		earlierThanDate = new Date(request.params.year, request.params.month -1, request.params.date),
