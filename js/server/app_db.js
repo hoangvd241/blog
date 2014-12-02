@@ -1,20 +1,33 @@
-var initialize, get_entries, get_entry, post_entry,
-	mongodb = require('mongodb'),
-	entriesCollection,
-	synopsis_length = 144,
-	url = 'mongodb://localhost:27017/blog';
+var	mongodb = require('mongodb'),
+	configMap = {
+		synopsis_length : 144,
+		url : 'mongodb://localhost:27017/blog'
+	},
 
-initialize = function (done) {
-	mongodb.MongoClient.connect(exports.url, function (err, db) {
-		if (err) throw err;
-		entriesCollection = db.collection('entries');
-		if (done) {
-			done();
-		}
+	configure, initialize, getEntries, getEntry, postEntry, cleanUpForTesting;
+
+configure = function (input_map) {
+	if (input_map.url) {
+		configMap.url = input_map.url;
+	};
+	if (input_map.synopsis_length) {
+		configMap.synopsis_length = input_map.synopsis_length;
+	};
+	if (input_map.development) {
+		configMap.development = true;
+	};
+}
+
+initialize = function (callback) {
+	mongodb.MongoClient.connect(configMap.url , function (err, db) {
+		if (db) {
+			entriesCollection = db.collection('entries');
+		};
+		callback(err);
 	});
 }
 
-get_entries = function (earlierThanDate, limit, callback) {
+getEntries = function (earlierThanDate, limit, callback) {
 	entriesCollection.aggregate([
 		{ $match : { posted : { $lt : earlierThanDate } } },
 		{ $sort : { posted : -1 } },
@@ -22,37 +35,47 @@ get_entries = function (earlierThanDate, limit, callback) {
 		{ $project : {
 			title : 1,
 			posted : 1,
-			synopsis : { $substr : [ '$content', 0, exports.synopsis_length ] }
+			synopsis : { $substr : [ '$content', 0, configMap.synopsis_length ] }
 		} }
 	]).toArray(function (err, entries) {
-		if (err) throw err;
-		callback(entries);
+		callback(err, entries);
 	});
 };
 
-get_entry = function ( entryId, callback ) {
-	entriesCollection.find( { _id : entryId }).toArray(function ( err, entries ) {
-		var entry;
-		if (err) throw err;
-		entry = entries && entries.length > 0 ? entries[0] : null;
-		callback(entry);
+getEntry = function (entryId, callback) {
+	entriesCollection.find({ _id : entryId }).toArray(function (err, entries) {
+		var entry = entries && entries.length > 0 ? entries[0] : null;
+		callback(err, entry);
 	});	
 };
 
-post_entry = function ( entry, callback ) {
-	entriesCollection.insert( entry, function (err, entries) {
-		if (err) throw err;
-		callback(entries[0]);
+postEntry = function (entry, callback) {
+	entriesCollection.insert(entry, function (err, entries) {
+		var entry = entries && entries.length > 0 ? entries[0] : null;
+		if (callback) {
+			callback(err, entry);
+		}
+	});
+};
+
+cleanUpForTesting = function (callback) {
+	entriesCollection.remove(function (err, noOfRemovedRecords) {
+		if (callback) callback();
 	});
 };
 
 module.exports = function () {
-	return {
-		url : url,
-		synopsis_length : synopsis_length,
+	var result = {
+		configure : configure,
 		initialize : initialize,
-		get_entries : get_entries,
-		get_entry : get_entry,
-		post_entry : post_entry
-	}
-}; 
+		getEntries : getEntries,
+		getEntry : getEntry,
+		postEntry : postEntry
+	};
+
+	if (process.env.NODE_ENV === 'test') {
+		result.cleanUpForTesting = cleanUpForTesting;
+	};
+
+	return result;
+};

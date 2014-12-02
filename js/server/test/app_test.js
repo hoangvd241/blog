@@ -13,11 +13,3 @@ describe('blog api test', function() {
 	});
 });
 */
-describe('asd', function () {
-
-	function asdsd () {
-		it('tet' , function() {
-			console.log('heheh');
-		});
-	} ();
-});
