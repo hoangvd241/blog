@@ -1,4 +1,4 @@
-var blog = (function () {
+	var blog = (function () {
 	'use strict';
 
 	var

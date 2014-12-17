@@ -1,29 +1,15 @@
 var	mongodb = require('mongodb'),
-	configMap = {
-		synopsis_length : 144,
-		url : 'mongodb://localhost:27017/blog'
-	},
+	env = process.env.NODE_ENV || 'global',
+	cfg = require('./config/config.' + env),
 
-	configure, initialize, getEntries, getEntry, postEntry, cleanUpForTesting;
-
-configure = function (input_map) {
-	if (input_map.url) {
-		configMap.url = input_map.url;
-	};
-	if (input_map.synopsis_length) {
-		configMap.synopsis_length = input_map.synopsis_length;
-	};
-	if (input_map.development) {
-		configMap.development = true;
-	};
-}
+	initialize, getEntries, getEntry, postEntry, deleteEntry, cleanUpForTesting;
 
 initialize = function (callback) {
-	mongodb.MongoClient.connect(configMap.url , function (err, db) {
-		if (db) {
-			entriesCollection = db.collection('entries');
-		};
-		callback(err);
+	var url = cfg.mongo.uri + cfg.mongo.db;
+	mongodb.MongoClient.connect(url , function (err, db) {
+		if (err) throw err;
+		entriesCollection = db.collection('entries');
+		if (callback) callback();
 	});
 }
 
@@ -35,42 +21,53 @@ getEntries = function (earlierThanDate, limit, callback) {
 		{ $project : {
 			title : 1,
 			posted : 1,
-			synopsis : { $substr : [ '$content', 0, configMap.synopsis_length ] }
+			synopsis : { $substr : [ '$content', 0, cfg.synopsis_length ] }
 		} }
 	]).toArray(function (err, entries) {
-		callback(err, entries);
+		if (err) throw err;
+		callback(entries);
 	});
 };
 
 getEntry = function (entryId, callback) {
-	entriesCollection.find({ _id : entryId }).toArray(function (err, entries) {
-		var entry = entries && entries.length > 0 ? entries[0] : null;
-		callback(err, entry);
+	entriesCollection.findOne( { _id : entryId } , {}, function (err, entry) {
+		if (err) throw err;
+		callback(entry);
 	});	
 };
 
-postEntry = function (entry, callback) {
-	entriesCollection.insert(entry, function (err, entries) {
-		var entry = entries && entries.length > 0 ? entries[0] : null;
+deleteEntry = function (entryId, callback) {
+	entriesCollection.deleteOne( { _id : entryId }, {}, function (err, entry) {
+		if (err) throw err;
 		if (callback) {
-			callback(err, entry);
+			callback();
 		}
 	});
 };
 
-cleanUpForTesting = function (callback) {
-	entriesCollection.remove(function (err, noOfRemovedRecords) {
-		if (callback) callback();
+postEntry = function (entry, callback) {
+	entriesCollection.insertOne(entry, function (err, r) {
+		if (err) throw err;
+		var entry = r.ops && r.ops.length > 0 ? r.ops[0] : null;
+		if (callback) {
+			callback(entry);
+		}
+	});
+};
+
+cleanUpForTesting = function (done) {
+	entriesCollection.remove( {}, { w: 1 }, function (err, noOfRemovedRecords) {
+		done();
 	});
 };
 
 module.exports = function () {
 	var result = {
-		configure : configure,
 		initialize : initialize,
 		getEntries : getEntries,
 		getEntry : getEntry,
-		postEntry : postEntry
+		postEntry : postEntry,
+		deleteEntry : deleteEntry
 	};
 
 	if (process.env.NODE_ENV === 'test') {

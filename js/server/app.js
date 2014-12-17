@@ -5,7 +5,13 @@ var
 	logger = require('morgan'),
 	app = express(),
 	server = http.createServer( app ),
-	blog_db = require('./app_db');
+	app_db = require('./app_db'),
+	dac = app_db();
+
+dac.configure({ 
+	synopsis_length : 144,
+	url : 'mongodb://localhost:27017/blog'
+});
 
 app.use( logger() );
 app.use( errorHandler({
@@ -13,19 +19,23 @@ app.use( errorHandler({
 	showStack : true
 }));
 
-blog_db.synopsis_length = 20;
-
 app.get('/entries/:year/:month/:date/:limit', function (request, response) {
 	var
-		earlierThanDate = new Date(request.params.year, request.params.month -1, request.params.date),
+		earlierThanDate = new Date(request.params.year, request.params.month - 1, request.params.date),
 		limit = parseInt(request.params.limit);
 		
-	blog_db.get_entries(earlierThanDate, limit, function (entries) {
+	dac.getEntries(earlierThanDate, limit, function (entries) {
 		response.send(entries);
 	});
 });
 
+app.get('/entry/:id', function (request, response) {
+	var id = request.params.id;
+	dac.getEntry
+});
+
 exports.app = app;
 
-server.listen(3000);
-
+dac.initialize(function () {
+	server.listen(3000);
+});

@@ -1,44 +1,39 @@
 var app_db = require('../app_db'),
 	should = require('should'),
-	dac;
-
-process.env.NODE_ENV = 'test';
-
-dac = app_db();
-
-dac.configure({ 
-	synopsis_length : 10,
-	url : 'mongodb://localhost:27017/blog_test'
-});
+	dac = app_db();
 
 describe('app_db test', function () {
+	var entryIds;
+
 	before(function (done){
-		dac.initialize(function (err){
-			if (err) throw err;
-			done();
-		});
+		dac.initialize(done);
 	});
 
-	describe('getEntries test', function () {
-		beforeEach(function (done) {
-			var callback,
-				noOfInserted = 0;
+	beforeEach(function (done) {
+		var getCallback,
+			noOfInserted = 0;
 
-			callback = function (err, entry) {
+		getCallback = function (IdNo) {
+			entryIds = {};
+
+			return function (entry) {
+				entryIds[IdNo] = entry._id;
 				if (++noOfInserted == 5) {
 					done();
 				};
 			};
+		};
 
-			dac.postEntry( { title : 'Entry 1', posted : new Date(2014, 10, 26), content: '1234567890-1234567890-1234567890-1234567890-1234567890' }, callback );
-			dac.postEntry( { title : 'Entry 2', posted : new Date(2014, 10, 01), content: '9876543210-9876543210-9876543210-9876543210-9876543210-9876543210-9876543210' }, callback );
-			dac.postEntry( { title : 'Entry 3', posted : new Date(2014, 09, 20), content: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' }, callback );
-			dac.postEntry( { title : 'Entry 4', posted : new Date(2014, 03, 10), content: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' }, callback );
-			dac.postEntry( { title : 'Entry 5', posted : new Date(2013, 10, 08), content: 'ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc' }, callback );
-		});
+		dac.postEntry( { title : 'Entry 1', posted : new Date(2014, 10, 26), content: '1234567890-1234567890-1234567890-1234567890-1234567890' }, getCallback('id1') );
+		dac.postEntry( { title : 'Entry 2', posted : new Date(2014, 10, 01), content: '9876543210-9876543210-9876543210-9876543210-9876543210-9876543210-9876543210' }, getCallback('id2') );
+		dac.postEntry( { title : 'Entry 3', posted : new Date(2014, 09, 20), content: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' }, getCallback('id3') );
+		dac.postEntry( { title : 'Entry 4', posted : new Date(2014, 03, 10), content: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' }, getCallback('id4') );
+		dac.postEntry( { title : 'Entry 5', posted : new Date(2013, 10, 08), content: 'ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc' }, getCallback('id5') );
+	});
 
-		it('getEntries earlier than date and limit', function (done) {
-			dac.getEntries(new Date(2014, 10, 01), 2, function (err, entries) {
+	describe('getEntries', function () {
+		it('return limit no of records', function (done) {
+			dac.getEntries(new Date(2014, 10, 01), 2, function (entries) {
 				entries.length.should.equal(2);
 				entries[0].should.have.properties({
 					title : 'Entry 3',
@@ -53,37 +48,69 @@ describe('app_db test', function () {
 				done();
 			});
 		});
-	});
 
-
-
-	/*xit('get entry by id', function (done) {
-		app_db.get_entry(entry1Id, function ( entry ) {
-			entry.should.have.properties({
-				title : 'Entry 1',
-				posted : new Date(2014, 10, 26),
-				content : '1234567890-1234567890-1234567890-1234567890-1234567890'
+		it('return <limit no of records', function (done) {
+			dac.getEntries(new Date(2014, 03, 10), 2, function (entries) {
+				entries.length.should.equal(1);
+				entries[0].should.have.properties({
+					title : 'Entry 5',
+					posted : new Date(2013, 10, 08),
+					synopsis : 'cccccccccc' 
+				});
+				done();
 			});
-			done();
+		});
+
+		it('return 0 no of records', function (done) {
+			dac.getEntries(new Date(2013, 10, 08), 2, function (entries) {
+				entries.length.should.equal(0);
+				done();
+			});
 		});
 	});
 
-	xit('post entry', function (done) {
-		var entry = { title : 'Inserted Entry', posted : new Date(2014, 10, 30), content : 'A test entry was inserted' };
-		app_db.post_entry( entry  , function ( entryId ) {
-			mongoClient.connect(url, function (err, db) {
-				db.collection('entries').findOne( { _id : { $eq : entryId } }).toArray( function (err, entries) {
-					entries.length.should.equal(1);
-					entries[0].should.properties({
-						title : 'Inserted Entry', 
-						posted : new Date(2014, 10, 30),
-						content : 'A test entry was inserted'
-					});
+	describe('getEntry', function () {
+		it('get ok', function (done) {
+			dac.getEntry(entryIds['id1'], function (entry) {
+				entry.should.have.properties({
+					title : 'Entry 1',
+					posted : new Date(2014, 10, 26),
+					content : '1234567890-1234567890-1234567890-1234567890-1234567890' 
+				});
+				done();
+			});
+		});
+
+		it('get not ok', function (done) {
+			dac.getEntry('xxxxxxxxx', function (entry) {
+				(entry == null).should.be.true;
+				done();
+			});
+		});
+	});
+
+	describe('postEntry', function () {
+		it('post ok', function (done) {
+			dac.postEntry(
+				{ title : 'Entry 1', posted : new Date(2014, 10, 26), content: '1234567890-1234567890-1234567890-1234567890-1234567890' },
+				function (entry) { 
+					entry.title.should.equal('Entry 1');
+					done(); 
+				}
+			);
+		});
+	});
+
+	describe('deleteEntry', function () {
+		it('delete ok', function (done) {
+			dac.deleteEntry(entryIds['id1'], function () {
+				dac.getEntry(entryIds['id1'], function (entry) {
+					(entry == null).should.be.true;
 					done();
 				});
 			});
 		});
-	});*/
+	});
 
 	afterEach(function (done) {
 		dac.cleanUpForTesting(done);
