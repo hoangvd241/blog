@@ -9,6 +9,7 @@
 		"should" : "4.x",
 		"errorhandler" : "1.x",
 		"morgan" : "1.x",
-		"supertest" : "0.x"
+		"supertest" : "0.x",
+		"body-parser" : "1.10.1"
 	}
 }
