@@ -1,6 +1,7 @@
 'use strict'
 
 var	mongodb = require('mongodb'),
+	ObjectID = mongodb.ObjectID,
 	env = process.env.NODE_ENV || 'global',
 	cfg = require('./config/config.' + env),
 
@@ -32,11 +33,11 @@ getEntries = function (earlierThanDate, limit, callback) {
 };
 
 getEntry = function (entryId, callback) {
-	entriesCollection.findOne({ _id : entryId } , {}, callback);	
+	entriesCollection.findOne({ _id : new ObjectID(entryId) } , {}, callback);	
 };
 
 deleteEntry = function (entryId, onError) {
-	entriesCollection.deleteOne({ _id : entryId }, {}, onError);
+	entriesCollection.deleteOne({ _id : new ObjectID(entryId) }, {}, onError);
 };
 
 postEntry = function (entry, callback) {

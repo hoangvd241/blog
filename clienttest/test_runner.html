@@ -1,0 +1,28 @@
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Blog data test</title>
+	<link rel="stylesheet" type="text/css" href="../node_modules/mocha/mocha.css">
+</head>
+<body>
+	<div id="mocha"></div>
+	<script type="text/javascript" src="../public/js/lib/jquery-2.1.3.js"></script>
+	<script type="text/javascript" src="../node_modules/sinon/pkg/sinon.js"></script>
+	<script type="text/javascript" src="../node_modules/should/should.js"></script>
+	<script type="text/javascript" src="../node_modules/mocha/mocha.js"></script>
+	<script type="text/javascript">mocha.setup('bdd')</script>
+	<script type="text/javascript">
+		var blog = {};
+	</script>
+	<script type="text/javascript" src="../public/js/blog_data.js"></script>
+	<script type="text/javascript" src="blog_data_test.js"></script>
+	<script type="text/javascript">
+		if (window.mochaPhantomJS) {
+			mochaPhantomJS.run();
+		}
+		else {
+			mocha.run();
+		}
+	</script>
+<body>
+</htm>

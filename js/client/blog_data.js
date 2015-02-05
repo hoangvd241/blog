@@ -1,3 +1,0 @@
-blog.data = (function () {
-	var
-} ());

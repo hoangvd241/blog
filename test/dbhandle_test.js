@@ -1,5 +1,6 @@
 var db_handle = require('../dbhandle'),
-	should = require('should');
+	should = require('should'),
+	ObjectID = require('mongodb').ObjectID;
 
 describe('dbhandle test', function () {
 	var entryIds;
@@ -16,7 +17,7 @@ describe('dbhandle test', function () {
 			entryIds = {};
 
 			return function (err, entry) {
-				entryIds[IdNo] = entry._id;
+				entryIds[IdNo] = entry._id.toString();
 				if (++noOfInserted == 5) {
 					done();
 				};
@@ -81,7 +82,7 @@ describe('dbhandle test', function () {
 		});
 
 		it('get not ok', function (done) {
-			db_handle.getEntry('xxxxxxxxx', function (err, entry) {
+			db_handle.getEntry(new ObjectID().toString(), function (err, entry) {
 				(entry == null).should.be.true;
 				done();
 			});

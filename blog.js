@@ -8,7 +8,7 @@ initialize = function (dbhandle) {
 
 getEntries = function (year, month, date, limit, callback) {
 	var
-		earlierThanDate = new Date(year, month - 1, date),
+		earlierThanDate = new Date(year, month, date),
 		limit = parseInt(limit);
 	if (isNaN(limit)) return callback(new Error('Limit is not valid.'));
 	if (isNaN(earlierThanDate.getTime())) return callback(new Error('Date is not valid.'));
@@ -37,6 +37,7 @@ postEntry = function (title, content, callback) {
 module.exports = {
 	initialize : initialize,
 	getEntries : getEntries,
+	getEntry : getEntry,
 	deleteEntry : deleteEntry,
 	postEntry : postEntry
 };
